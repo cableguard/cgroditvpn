@@ -122,6 +122,10 @@ Most scripts accept `help`. Longer notes and the host software baseline live in 
 | Script | What it does |
 |--------|----------------|
 | `idcp-wallet.sh` | RODiT / NEAR wallet CLI (see [docs/readme.md](docs/readme.md) and [docs/rpc-configuration.md](docs/rpc-configuration.md)) |
+| `list-vault-secrets.sh` | List Vault secrets (`discernible` / `discernible-io`, or `VAULT_PROFILE`) |
+| `vault_management.sh` | Interactive Vault secret put/get/delete/list (AppRole) |
+| `vault.Dockerfile` | Dev Vault image helper |
+| `signing-*.hcl` / `podman-policy.hcl` | Vault policy snippets used with the vault scripts |
 | `configure-mc-nano-oneoff.sh` | Point Midnight Commander F4 at nano |
 | `configure-mc-nano-editor-oneoff.sh` | Same MC/nano setup for a given username |
 

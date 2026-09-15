@@ -80,6 +80,9 @@ Scripts that used to be separate entry points are merged with a **subcommand** a
 
 ### Core services
 - **`idcp-wallet.sh`** — RODiT wallet management (see usage below)
+- **`list-vault-secrets.sh`** — List Vault secrets (`discernible` or `discernible-io` profile, or `VAULT_PROFILE`)
+- **`vault_management.sh`** — Interactive Vault secret management (AppRole; needs `VAULT_ROLE_ID` / `VAULT_SECRET_ID`)
+- **`vault.Dockerfile`**, **`signing-*.hcl`**, **`podman-policy.hcl`** — Vault image/policy helpers
 - **`restart-containers-apis.sh`** — Restart all API containers in correct order
 - **`start`** — Compatibility wrapper; runs `INFRA_SERVICE_STARTER` from the host profile
 
