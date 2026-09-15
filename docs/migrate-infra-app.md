@@ -117,7 +117,6 @@ touch production):
 ```bash
 cd ~/infra
 sudo ./setup-host-oneoff.sh    # email defaults from INFRA_CERT_EMAIL
-# Old names still work: setup-dedaloNN-host-oneoff.sh → same script
 ```
 
 ## Do / don’t

@@ -28,6 +28,19 @@ Defaults (set in `infra-env-helper-shared.sh`): `INFRA_OUTPUT_DIR=$INFRA_APP_DIR
 `./bootstrap-infra-app.sh` creates the output dir (and may migrate any legacy
 `~/infra/trivy-scan-results/*` artifacts into `~/infra-app/`).
 
+Optional pod start map for `start-pod.sh` / liveness (host profile):
+
+```bash
+declare -A INFRA_POD_START=(
+  [myservice]="my-pod|my-container|${INFRA_HOME}/my-app/deploy.sh|--flag"
+)
+declare -A INFRA_POD_START_ENV=(
+  [myservice]="TARGET=main"
+)
+# INFRA_MONITOR_SERVICES entry:
+#   "myservice:my-container:${INFRA_REPO}/start-pod.sh:8443"
+```
+
 **Source of truth for inventories:** host profiles below and
 [production-hosts.md](./docs/production-hosts.md). Live values belong in
 `~/infra-app/` on each machine, not in git.
@@ -175,7 +188,7 @@ INFRA_MONITOR_SERVICES=(
 )
 
 INFRA_CERT_EMAIL="${INFRA_CERT_EMAIL:-admin@discernible.io}"
-INFRA_IDCLAW_API_LOGPATH="${INFRA_IDCLAW_API_LOGPATH:-/var/log/signportal/api.log}"
+INFRA_API_SCAN_LOGPATH="${INFRA_API_SCAN_LOGPATH:-/var/log/signportal/api.log}"
 
 # shellcheck source=/dev/null
 source "${INFRA_REPO}/infra-env-helper-shared.sh"
@@ -227,7 +240,7 @@ INFRA_MONITOR_SERVICES=(
 )
 
 INFRA_CERT_EMAIL="${INFRA_CERT_EMAIL:-admin@discernible.io}"
-INFRA_IDCLAW_API_LOGPATH="${INFRA_IDCLAW_API_LOGPATH:-/var/log/idclawserver/api.log}"
+INFRA_API_SCAN_LOGPATH="${INFRA_API_SCAN_LOGPATH:-/var/log/idclawserver/api.log}"
 
 # shellcheck source=/dev/null
 source "${INFRA_REPO}/infra-env-helper-shared.sh"
@@ -311,7 +324,7 @@ INFRA_MONITOR_SERVICES=(
   "openclawagents:openclaw-nginx::8443"
 )
 INFRA_CERT_EMAIL="${INFRA_CERT_EMAIL:-admin@discernible.io}"
-INFRA_IDCLAW_API_LOGPATH="${INFRA_IDCLAW_API_LOGPATH:-/var/log/mintserver/api.log}"
+INFRA_API_SCAN_LOGPATH="${INFRA_API_SCAN_LOGPATH:-/var/log/mintserver/api.log}"
 
 # shellcheck source=/dev/null
 source "${INFRA_REPO}/infra-env-helper-shared.sh"
@@ -415,14 +428,20 @@ INFRA_MONITORING_ALLOW_CIDRS=(
 INFRA_PORT_FORWARD_SERVICE="${INFRA_PORT_FORWARD_SERVICE:-slcbackend}"
 INFRA_PORT_FORWARD_DEST="${INFRA_PORT_FORWARD_DEST:-${INFRA_API_PORTS[slcbackend]}}"
 INFRA_MONITORING_CERTS_DIR="${INFRA_MONITORING_CERTS_DIR:-${INFRA_HOME}/grafanaloki-app/certs}"
+declare -A INFRA_POD_START=(
+  [slcbackend]="slcbackend-pod|slcbackend-container|${INFRA_HOME}/slcbackend-slc/scripts/deploy-local-podman.sh|--skip-build"
+)
+declare -A INFRA_POD_START_ENV=(
+  [slcbackend]="TARGET=main"
+)
 INFRA_MONITOR_SERVICES=(
   "idclawserver:idclawserver-container::5443"
   "mintrootidc:mintrootidc-container::6443"
   "mintserveridc:mintserveridc-container::2443"
-  "slcbackend:slcbackend-container:${INFRA_REPO}/start-slcbackend-pod.sh:13443"
+  "slcbackend:slcbackend-container:${INFRA_REPO}/start-pod.sh:13443"
 )
 INFRA_CERT_EMAIL="${INFRA_CERT_EMAIL:-admin@dihola.io}"
-INFRA_IDCLAW_API_LOGPATH="${INFRA_IDCLAW_API_LOGPATH:-/var/log/idclawserver/api.log}"
+INFRA_API_SCAN_LOGPATH="${INFRA_API_SCAN_LOGPATH:-/var/log/idclawserver/api.log}"
 
 # shellcheck source=/dev/null
 source "${INFRA_REPO}/infra-env-helper-shared.sh"
@@ -614,7 +633,7 @@ INFRA_MONITOR_SERVICES=(
   "monitoring:monitoring-grafana:${INFRA_REPO}/start-monitoring-pod.sh:"
 )
 INFRA_CERT_EMAIL="${INFRA_CERT_EMAIL:-admin@dihola.io}"
-INFRA_IDCLAW_API_LOGPATH="${INFRA_IDCLAW_API_LOGPATH:-/var/log/signportal/api.log}"
+INFRA_API_SCAN_LOGPATH="${INFRA_API_SCAN_LOGPATH:-/var/log/signportal/api.log}"
 
 # shellcheck source=/dev/null
 source "${INFRA_REPO}/infra-env-helper-shared.sh"

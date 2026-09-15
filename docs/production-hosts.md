@@ -157,7 +157,7 @@ Scripts load host config from the sibling **`~/infra-app/infra-env-helper.sh`**
 
 - **idclawserver** — api.identyclaw.com:5443 (443→5443 redirect)
 
-Bootstrap: `sudo ./setup-host-oneoff.sh` (or legacy `setup-dedalo44-host-oneoff.sh`)
+Bootstrap: `sudo ./setup-host-oneoff.sh`
 
 ## dedalo46 (Discernible IC + monitoring)
 
@@ -167,7 +167,7 @@ Bootstrap: `sudo ./setup-host-oneoff.sh` (or legacy `setup-dedalo44-host-oneoff.
 - **openclaw-agents** — andrew/joe/daniel.dihola.io + identyclaw-concierge.identyclaw.com:8443
 - **grafanaloki** — grafana46.discernible.io (host port 3335)
 
-Bootstrap: `sudo ./setup-host-oneoff.sh` (or legacy `setup-dedalo46-host-oneoff.sh`)
+Bootstrap: `sudo ./setup-host-oneoff.sh`
 
 ### Host `*-app` directory layout
 

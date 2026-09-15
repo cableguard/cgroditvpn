@@ -42,7 +42,7 @@ Summarize from `sudo ./configure-host-firewall-oneoff.sh status` and `~/infra-ap
 | SSH drop-in (`/etc/ssh/sshd_config.d/99-infra-hardening.conf`) | |
 | fail2ban (`sshd`) | |
 | auditd + secrets watch | |
-| API scan jail (`configure-fail2ban-idclaw-api-jail-oneoff.sh`) | optional |
+| API scan jail (`configure-fail2ban-api-scan-jail-oneoff.sh`) | optional |
 
 Apply bundle: `sudo ./apply-security-improvements-oneoff.sh`
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # One-shot host bootstrap driven by ~/infra-app/infra-env-helper.sh.
-# Replaces setup-dedaloNN-host-oneoff.sh — same steps on every machine; ports,
-# domains, and 443 redirect target come from the host profile.
+# Ports, domains, and 443 redirect target come from the host profile.
 #
 # Usage (from your terminal, not the agent shell):
 #   ./setup-host-oneoff.sh [certbot-email]

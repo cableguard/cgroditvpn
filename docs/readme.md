@@ -86,6 +86,7 @@ Scripts that used to be separate entry points are merged with a **subcommand** a
 ### Container monitoring
 - **`manage-monitoring-pods.sh`** — `install` | `enable` | `disable` | `status` for Podman liveness monitoring
 - **`start-monitoring-pod.sh`** — Start `monitoring-pod` (Grafana/Loki); full deploy only if pod missing
+- **`start-pod.sh`** — Generic pod start / optional deploy (`<pod> <probe> [deploy…]`, or `INFRA_POD_START` lookup)
 - **`monitor-pods-liveness-helper.sh`** — Checker invoked by systemd (services from `INFRA_MONITOR_SERVICES`)
 - **`monitor-pods-liveness.service`** / **`monitor-pods-liveness.timer`** — Systemd units (installed by `manage-monitoring-pods.sh install`)
 
@@ -102,7 +103,7 @@ Scripts that used to be separate entry points are merged with a **subcommand** a
 - **`harden-server-oneoff.sh`** — Bootstrap SSH, fail2ban, auditd hardening
 - **`apply-security-improvements-oneoff.sh`** — SSH keys cleanup + harden + firewall + optional API fail2ban jail
 - **`fix-audit-rules-oneoff.sh`** — Repair audit watch rules when secrets paths are missing
-- **`configure-fail2ban-idclaw-api-jail-oneoff.sh`** — `install [logpath]` | `remove` for API-scan fail2ban jail
+- **`configure-fail2ban-api-scan-jail-oneoff.sh`** — `install [logpath]` | `remove` for API-scan fail2ban jail
 
 ### System maintenance
 - **`bootstrap-infra-app.sh`** — Create `~/infra-app/`, host profile, `maintenance-status.md` template
@@ -120,7 +121,6 @@ Scripts that used to be separate entry points are merged with a **subcommand** a
 - **`configure-port-forwarding-oneoff.sh`** — iptables 443→`INFRA_PORT_FORWARD_DEST` REDIRECT (service name or port)
 - **`configure-host-firewall-oneoff.sh`** — inbound TCP allowlist from `~/infra-app/infra-env-helper.sh`
 - **`setup-host-oneoff.sh`** — One-shot bootstrap: rootless Podman, weekly timers, pod monitor, app dirs, TLS, firewall, optional 443 redirect
-- **`setup-dedalo{42,44,46,47}-host-oneoff.sh`** — Thin wrappers around `setup-host-oneoff.sh`
 
 ## RODiT wallet usage
 

@@ -20,7 +20,7 @@ sudo ./setup-host-oneoff.sh you@example.com
 
 `./bootstrap-infra-app.sh --status` shows the loaded profile. Most other scripts accept `help`.
 
-Named fleet templates (`dedalo43`, `dedalo47`, …) are listed in [infra-env-helper.md](infra-env-helper.md). Extra tenant apps belong only in `~/infra-app/`.
+Named profiles (`example`, plus fleet templates) are listed in [infra-env-helper.md](infra-env-helper.md). Extra tenant apps belong only in `~/infra-app/`.
 
 ## Layout
 
@@ -62,7 +62,6 @@ Most scripts accept `help`. Longer notes and the host software baseline live in 
 | `bootstrap-infra-app.sh` | Create `~/infra-app/`, install a host profile, optional `--with-app-dirs` / `--status` |
 | `bootstrap-app-dir-layout.sh` | Create or repair `*-app/` trees (`certs/`, `secrets/`, …) from the profile |
 | `setup-host-oneoff.sh` | One-shot bootstrap: rootless Podman, timers, pod monitor, TLS, firewall, optional 443 redirect |
-| `setup-dedalo{42,44,46,47}-host-oneoff.sh` | Thin wrappers that call `setup-host-oneoff.sh` |
 | `golive.sh` | Reboot-persistence bundle (monitor, weekly timers, uptime, firewall, container restarts) |
 | `apply-health-recommendations.sh` | Rootless Podman + weekly maintenance timers + status summary |
 | `infra-env-helper.sh` | Loader that sources `~/infra-app/infra-env-helper.sh` |
@@ -74,8 +73,8 @@ Most scripts accept `help`. Longer notes and the host software baseline live in 
 |--------|----------------|
 | `restart-containers-apis.sh` | Restart API stacks in dependency order (infra → app → nginx) |
 | `start` | Compatibility wrapper; runs `INFRA_SERVICE_STARTER` from the host profile |
-| `start-monitoring-pod.sh` | Start Grafana/Loki `monitoring-pod` (deploy only if missing) |
-| `start-slcbackend-pod.sh` | Start `slcbackend-pod` (boot / liveness restart) |
+| `start-monitoring-pod.sh` | Start Grafana/Loki monitoring pod (wrapper around `start-pod.sh`) |
+| `start-pod.sh` | Start any Podman pod by name, or via `INFRA_POD_START` in the host profile |
 | `manage-monitoring-pods.sh` | `install` \| `enable` \| `disable` \| `status` for Podman liveness monitoring |
 | `monitor-pods-liveness-helper.sh` | Checker invoked by systemd (`INFRA_MONITOR_SERVICES`) |
 | `infra-podman-helper.sh` | Shared Podman helpers sourced by other scripts |
@@ -99,7 +98,7 @@ Most scripts accept `help`. Longer notes and the host software baseline live in 
 | `harden-server-oneoff.sh` | Bootstrap SSH, fail2ban, auditd hardening |
 | `apply-security-improvements-oneoff.sh` | SSH key cleanup + harden + firewall + optional API jail |
 | `fix-audit-rules-oneoff.sh` | Repair audit watch rules when paths are missing |
-| `configure-fail2ban-idclaw-api-jail-oneoff.sh` | `install [logpath]` \| `remove` for API-scan fail2ban jail |
+| `configure-fail2ban-api-scan-jail-oneoff.sh` | `install [logpath]` \| `remove` for API-scan fail2ban jail |
 | `configure-host-firewall-oneoff.sh` | Inbound TCP allowlist from the host profile |
 | `configure-port-forwarding-oneoff.sh` | iptables REDIRECT (e.g. 443 → app port); optional permanent service |
 | `infra-iptables-helper.sh` | Shared iptables helpers |

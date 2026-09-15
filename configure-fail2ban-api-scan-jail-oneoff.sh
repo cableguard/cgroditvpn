@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Install or remove the idclaw API scan fail2ban jail.
-# Usage: sudo ./configure-fail2ban-idclaw-api-jail-oneoff.sh install [logpath]
-#        sudo ./configure-fail2ban-idclaw-api-jail-oneoff.sh remove
+# Install or remove an API-scan fail2ban jail (swagger/openapi/.well-known probes).
+# Usage: sudo ./configure-fail2ban-api-scan-jail-oneoff.sh install [logpath]
+#        sudo ./configure-fail2ban-api-scan-jail-oneoff.sh remove
+#
+# Log path: argument, else INFRA_API_SCAN_LOGPATH (host profile).
 
 set -euo pipefail
 
@@ -11,14 +13,17 @@ if [[ -f "$SCRIPT_DIR/infra-env-helper.sh" ]]; then
   source "$SCRIPT_DIR/infra-env-helper.sh"
 fi
 
-FILTER_NAME="idclaw-api-scan"
+FILTER_NAME="api-scan"
 FILTER_PATH="/etc/fail2ban/filter.d/${FILTER_NAME}.conf"
 JAIL_PATH="/etc/fail2ban/jail.d/${FILTER_NAME}.local"
-DEFAULT_LOGPATH="${INFRA_IDCLAW_API_LOGPATH:-/var/log/idclawserver/api.log}"
+# Legacy jail name from older checkouts (removed on install/remove).
+LEGACY_FILTER_NAME="idclaw-api-scan"
+DEFAULT_LOGPATH="${INFRA_API_SCAN_LOGPATH:-${INFRA_IDCLAW_API_LOGPATH:-}}"
 
 usage() {
   echo "Usage: sudo $0 install [logpath]"
   echo "       sudo $0 remove"
+  echo "Log path defaults to INFRA_API_SCAN_LOGPATH from the host profile."
   exit 1
 }
 
@@ -29,8 +34,22 @@ require_root() {
   fi
 }
 
+remove_legacy_jail() {
+  local legacy_filter="/etc/fail2ban/filter.d/${LEGACY_FILTER_NAME}.conf"
+  local legacy_jail="/etc/fail2ban/jail.d/${LEGACY_FILTER_NAME}.local"
+  if command -v fail2ban-client >/dev/null 2>&1; then
+    fail2ban-client stop "${LEGACY_FILTER_NAME}" >/dev/null 2>&1 || true
+  fi
+  rm -f "${legacy_filter}" "${legacy_jail}"
+}
+
 cmd_install() {
   local logpath="${1:-$DEFAULT_LOGPATH}"
+
+  if [[ -z "$logpath" ]]; then
+    echo "Error: pass a logpath or set INFRA_API_SCAN_LOGPATH in ~/infra-app/infra-env-helper.sh" >&2
+    exit 1
+  fi
 
   if ! command -v fail2ban-client >/dev/null 2>&1; then
     echo "fail2ban not found; installing epel-release (if needed) and fail2ban..."
@@ -39,6 +58,8 @@ cmd_install() {
     fi
     dnf install -y fail2ban
   fi
+
+  remove_legacy_jail
 
   echo "Installing fail2ban filter: ${FILTER_PATH}"
   cat > "${FILTER_PATH}" <<'EOF'
@@ -96,6 +117,8 @@ cmd_remove() {
   else
     echo "fail2ban is not installed; only removing local files (if any)."
   fi
+
+  remove_legacy_jail
 
   if [[ -f "${JAIL_PATH}" ]]; then
     echo "Removing jail file: ${JAIL_PATH}"

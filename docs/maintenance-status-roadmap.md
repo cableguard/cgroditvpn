@@ -50,11 +50,11 @@ Prefer **`manage-weekly-maintenance.sh`** (`install` | `enable` | `disable` | `s
 
 | Script | Typical use |
 |--------|-------------|
-| `bootstrap-infra-app.sh <host>` | Create `~/infra-app/`, install host profile from [infra-env-helper.md](../infra-env-helper.md), create `trivy-scan-results/`. Hosts: **dedalo42**, **dedalo44**, **dedalo46**, **dedalo47**, **dedalo43**. |
+| `bootstrap-infra-app.sh <profile>` | Create `~/infra-app/`, install host profile from [infra-env-helper.md](../infra-env-helper.md), create `trivy-scan-results/`. Profiles: **example**, **custom**, or a named fleet template. |
 | `bootstrap-app-dir-layout.sh` | Create or repair `*-app/` trees (`certs/`, `logs/`, `secrets/`, …). |
 | `host-uptime-prep.sh` `init` / `enable-permanent` | Install and enable the hourly timer. |
 | `golive.sh` | Reboot-persistence bundle: pod monitor, rootless Podman socket, **weekly maintenance timers**, host-uptime timer, `unless-stopped` on Podman containers, API restarts, monitoring pod, **host firewall** (`configure-host-firewall-oneoff.sh enable permanent`), status. Run **`sudo ./golive.sh`**; Podman steps use **`INFRA_USER`** via `runuser` (rootless store). Optional **`--with-port-forwarding`** for 443 REDIRECT. Does **not** harden SSH or issue certs. |
-| `setup-host-oneoff.sh` | Full bootstrap from `~/infra-app`: rootless Podman, weekly timers, pod monitor, app layout, TLS, firewall, optional 443 redirect. Legacy `setup-dedaloNN-host-oneoff.sh` wrappers call this. |
+| `setup-host-oneoff.sh` | Full bootstrap from `~/infra-app`: rootless Podman, weekly timers, pod monitor, app layout, TLS, firewall, optional 443 redirect. |
 | `apply-security-improvements-oneoff.sh` | SSH `authorized_keys` cleanup, `harden-server-oneoff.sh`, host firewall, optional idclaw API fail2ban jail, verification. |
 | `apply-health-recommendations.sh` | Rootless Podman linger/socket, weekly maintenance timers, firewall status summary. |
 | `harden-server-oneoff.sh` | Bootstrap or rare hardening change (SSH key-only, fail2ban, auditd, secrets watch). |
@@ -70,7 +70,7 @@ Prefer **`manage-weekly-maintenance.sh`** (`install` | `enable` | `disable` | `s
 | `generate-cert-letsencrypt.sh`, `install-certs-to-apps.sh` | Initial issuance or called from renewal flow. |
 | `restart-containers-apis.sh` | Ordered container restarts after deploy or cert reload (rootless: run as **`INFRA_USER`**, or via `golive.sh`). |
 | `verify-cert-mount-permissions.sh` | Validates Podman/nginx cert mount permissions when changing layout. |
-| `configure-fail2ban-idclaw-api-jail-oneoff.sh` | Optional fail2ban jail for API scan patterns (`install` / `remove`). |
+| `configure-fail2ban-api-scan-jail-oneoff.sh` | Optional fail2ban jail for API scan patterns (`install` / `remove`). |
 | `configure-mc-nano-oneoff.sh`, `configure-mc-nano-editor-oneoff.sh` | MC F4 → nano editor setup. |
 | `idcp-wallet.sh` | RODiT / NEAR wallet workflows (not generic host maintenance). |
 
@@ -93,7 +93,7 @@ Fleet domain/port reference: [production-hosts.md](./production-hosts.md). Live 
 
 - **Pod monitor / weekly unit templates:** Committed `.service`/`.timer` files use **`__INFRA_USER__`**, **`__INFRA_HOME__`**, **`__INFRA_REPO__`** placeholders. `install` rewrites them from the host profile (`INFRA_USER` / `INFRA_HOME` / `INFRA_REPO`). Override monitor user with **`MONITOR_USER`** if needed.
 - **Rootless Podman under sudo:** `podman` as root sees an empty container list. **`golive.sh`**, **`cleanup-disk-space-weekly.sh`**, and **`install-certs-on-renew-hook-helper.sh`** run Podman as **`INFRA_USER`** (`runuser` + `XDG_RUNTIME_DIR`). Other scripts invoked manually may still need the same pattern.
-- **Host profiles:** sibling **`~/infra-app/`** (never commit); templates in [infra-env-helper.md](../infra-env-helper.md) / [production-hosts.md](./production-hosts.md) — **example**, **dedalo44**, **dedalo42**, **dedalo46**, **dedalo47**, **dedalo43**.
+- **Host profiles:** sibling **`~/infra-app/`** (never commit); templates in [infra-env-helper.md](../infra-env-helper.md) / [production-hosts.md](./production-hosts.md) — **example**, **custom**, or a named fleet template.
 - **Weekly timer installers:** prefer **`manage-weekly-maintenance.sh`**; **`install-weekly-maintenance-timers.sh`** is a legacy alias with the same outcome.
 
 ---

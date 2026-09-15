@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Point Midnight Commander F4 at nano (not the built-in mcedit).
 # Usage: ./configure-mc-nano-editor-oneoff.sh [username]
-#        sudo ./configure-mc-nano-editor-oneoff.sh dedalo46
+#        sudo ./configure-mc-nano-editor-oneoff.sh someuser
 #
 # MC reads ~/.config/mc/ini — EDITOR alone is not enough; you need both:
 #   use_internal_edit=false
@@ -19,7 +19,7 @@ fi
 
 TARGET_USER="${1:-${SUDO_USER:-${INFRA_USER:-$USER}}}"
 if [[ "$TARGET_USER" == root ]]; then
-  echo "Specify a login user, not root: $0 dedalo46" >&2
+  echo "Specify a login user, not root: $0 someuser" >&2
   exit 1
 fi
 

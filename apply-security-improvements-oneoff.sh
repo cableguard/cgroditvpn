@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Apply post-assessment security improvements on dedalo47-class hosts.
+# Apply post-assessment security improvements on production hosts.
 # Run from your terminal: ./apply-security-improvements-oneoff.sh
 set -euo pipefail
 
@@ -59,8 +59,8 @@ echo "== 3/5 Host firewall (monitoring ports CIDR-restricted when enabled) =="
 
 echo ""
 echo "== 4/5 idclaw API scan fail2ban jail =="
-if [[ -f "$SCRIPT_DIR/configure-fail2ban-idclaw-api-jail-oneoff.sh" ]]; then
-  "$SCRIPT_DIR/configure-fail2ban-idclaw-api-jail-oneoff.sh" install || {
+if [[ -f "$SCRIPT_DIR/configure-fail2ban-api-scan-jail-oneoff.sh" ]]; then
+  "$SCRIPT_DIR/configure-fail2ban-api-scan-jail-oneoff.sh" install || {
     echo "  Warning: idclaw API jail install failed (log path may not exist yet)"
   }
 fi

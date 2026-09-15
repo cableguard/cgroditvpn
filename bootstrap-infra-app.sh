@@ -7,7 +7,7 @@
 #   ./bootstrap-infra-app.sh example --with-app-dirs
 #
 # Named fleet templates (from infra-env-helper.md):
-#   ./bootstrap-infra-app.sh dedalo43
+#   ./bootstrap-infra-app.sh <profile>
 #   INFRA_APP_DIR=/path/to/infra-app ./bootstrap-infra-app.sh example
 set -euo pipefail
 
@@ -31,8 +31,7 @@ Profiles:
   (none)     If no profile exists, install 'example'. If one exists, print status.
   example    Generic single-app host (api.example.com:5443)
   custom     Interactive prompts (user, domain, port, email, 443 redirect)
-  dedalo42|dedalo44|dedalo46|dedalo47|dedalo43
-             Named templates from infra-env-helper.md
+  <name>     Named template from infra-env-helper.md (if present)
 
 Flags:
   --with-app-dirs   Also create *-app trees (certs/, secrets/, …) from the profile

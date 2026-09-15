@@ -28,6 +28,17 @@ infra_ensure_array() {
     eval "${name}=()"
   fi
 }
+
+infra_ensure_assoc_array() {
+  local name="$1"
+  if ! declare -p "$name" &>/dev/null 2>&1; then
+    eval "declare -gA ${name}=()"
+  elif [[ "$(declare -p "$name" 2>/dev/null || true)" != declare\ -A* ]]; then
+    unset "$name"
+    eval "declare -gA ${name}=()"
+  fi
+}
+
 infra_ensure_array INFRA_PUBLIC_API_TCP_PORTS
 infra_ensure_array INFRA_PUBLIC_TCP_PORTS
 infra_ensure_array INFRA_MONITORING_TCP_PORTS
@@ -35,6 +46,8 @@ infra_ensure_array INFRA_ADMIN_TCP_PORTS
 infra_ensure_array INFRA_MONITORING_ALLOW_CIDRS
 infra_ensure_array INFRA_BLOCKED_PUBLIC_TCP_PORTS
 infra_ensure_array INFRA_EXTRA_PORT_FORWARDS
+infra_ensure_assoc_array INFRA_POD_START
+infra_ensure_assoc_array INFRA_POD_START_ENV
 
 infra_monitoring_restrict_enabled() {
   [[ "${INFRA_MONITORING_TCP_RESTRICT:-}" == "1" || "${INFRA_MONITORING_TCP_RESTRICT:-}" == "true" ]]
