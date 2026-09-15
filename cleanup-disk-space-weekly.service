@@ -1,0 +1,21 @@
+[Unit]
+Description=Weekly disk space cleanup (journal, logs, caches, Podman prune)
+Documentation=file://__INFRA_REPO__/docs/readme.md
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=__INFRA_REPO__
+Environment=INFRA_USER=__INFRA_USER__
+Environment=INFRA_HOME=__INFRA_HOME__
+Environment=INFRA_REPO=__INFRA_REPO__
+Environment=INFRA_APP_DIR=__INFRA_APP_DIR__
+ExecStart=__INFRA_REPO__/cleanup-disk-space-weekly.sh
+Nice=19
+IOSchedulingClass=idle
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

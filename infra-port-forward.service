@@ -1,0 +1,18 @@
+[Unit]
+Description=Re-apply infra NAT REDIRECTs after iptables restore
+Documentation=file://__INFRA_REPO__/docs/readme.md
+After=iptables.service network-online.target
+Wants=network-online.target
+Requires=iptables.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment="INFRA_REPO=__INFRA_REPO__"
+Environment="INFRA_APP_DIR=__INFRA_APP_DIR__"
+ExecStart=/usr/bin/bash __INFRA_REPO__/infra-port-forward-restore.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

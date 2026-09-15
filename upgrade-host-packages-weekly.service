@@ -1,0 +1,24 @@
+[Unit]
+Description=Weekly host OS package upgrade (dnf/yum)
+Documentation=file://__INFRA_REPO__/docs/readme.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=__INFRA_REPO__
+Environment=INFRA_USER=__INFRA_USER__
+Environment=INFRA_HOME=__INFRA_HOME__
+Environment=INFRA_REPO=__INFRA_REPO__
+Environment=INFRA_APP_DIR=__INFRA_APP_DIR__
+# Default: apply updates, do not reboot. Set AUTO_REBOOT=1 to reboot when needed.
+Environment=AUTO_REBOOT=0
+ExecStart=__INFRA_REPO__/upgrade-host-packages-weekly.sh
+Nice=10
+IOSchedulingClass=best-effort
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

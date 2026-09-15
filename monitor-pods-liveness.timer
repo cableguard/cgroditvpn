@@ -1,0 +1,11 @@
+[Unit]
+Description=Podman Container Monitor Timer
+Documentation=file://__INFRA_REPO__/docs/readme.md
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=30s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

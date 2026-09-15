@@ -1,0 +1,11 @@
+[Unit]
+Description=Run disk cleanup weekly
+Documentation=file://__INFRA_REPO__/docs/readme.md
+
+[Timer]
+OnCalendar=Sun *-*-* 03:00:00
+Persistent=true
+RandomizedDelaySec=30min
+
+[Install]
+WantedBy=timers.target

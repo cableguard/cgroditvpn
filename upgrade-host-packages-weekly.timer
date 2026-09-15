@@ -1,0 +1,11 @@
+[Unit]
+Description=Run host OS package upgrade weekly
+Documentation=file://__INFRA_REPO__/docs/readme.md
+
+[Timer]
+OnCalendar=Sun *-*-* 02:00:00
+Persistent=true
+RandomizedDelaySec=20min
+
+[Install]
+WantedBy=timers.target

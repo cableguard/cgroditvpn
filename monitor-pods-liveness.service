@@ -1,0 +1,27 @@
+[Unit]
+Description=Podman Container Monitor
+Documentation=file://__INFRA_REPO__/docs/readme.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=__INFRA_USER__
+Group=__INFRA_USER__
+# Installer rewrites these to MONITOR_USER's numeric UID.
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
+Environment="INFRA_USER=__INFRA_USER__"
+Environment="INFRA_HOME=__INFRA_HOME__"
+Environment="INFRA_REPO=__INFRA_REPO__"
+Environment="INFRA_APP_DIR=__INFRA_APP_DIR__"
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/usr/bin/bash -lc 'exec "$INFRA_REPO/monitor-pods-liveness-helper.sh"'
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

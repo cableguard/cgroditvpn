@@ -1,0 +1,14 @@
+[Unit]
+Description=Start lastcradle-be (slcbackend) pod after boot
+Documentation=file:///home/%u/infra/docs/production-hosts.md
+After=network-online.target podman-restart.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/bash %h/infra/start-slcbackend-pod.sh
+TimeoutStartSec=180
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,6 @@
+# Optional extra images for scan-containers-vulnerabilities-weekly.sh
+# Copy to scan-image-manifest.txt and edit per host.
+#
+# docker.io/grafana/grafana:11.3.0
+# docker.io/grafana/loki:3.5.0
+# ghcr.io/discernible-io/signsanctum-idc/signsanctum-api:9915d2dec5960aa0f62c80cc044529d9c9ed3dff

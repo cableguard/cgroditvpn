@@ -1,0 +1,28 @@
+[Unit]
+Description=Weekly Trivy container and source vulnerability scan
+Documentation=file://__INFRA_REPO__/docs/readme.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=__INFRA_USER__
+Group=__INFRA_USER__
+WorkingDirectory=__INFRA_REPO__
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
+Environment=INFRA_USER=__INFRA_USER__
+Environment=INFRA_HOME=__INFRA_HOME__
+Environment=INFRA_REPO=__INFRA_REPO__
+Environment=INFRA_APP_DIR=__INFRA_APP_DIR__
+Environment=PULL_MISSING=1
+# Log in to ghcr.io before enabling if registry scans fail (podman login ghcr.io).
+ExecStartPre=/usr/bin/bash -c 'systemctl --user start podman.socket 2>/dev/null || true'
+ExecStart=__INFRA_REPO__/scan-containers-vulnerabilities-weekly.sh
+Nice=10
+IOSchedulingClass=best-effort
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
