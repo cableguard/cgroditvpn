@@ -72,9 +72,7 @@ Prefer **`manage-weekly-maintenance.sh`** (`install` | `enable` | `disable` | `s
 | `verify-cert-mount-permissions.sh` | Validates Podman/nginx cert mount permissions when changing layout. |
 | `configure-fail2ban-idclaw-api-jail-oneoff.sh` | Optional fail2ban jail for API scan patterns (`install` / `remove`). |
 | `configure-mc-nano-oneoff.sh`, `configure-mc-nano-editor-oneoff.sh` | MC F4 → nano editor setup. |
-| `archive/vault_management.sh`, `archive/list-vault-secrets.sh` | Vault operations and listing. |
-| `idcp-wallet.sh`, `archive/cgcvpn.sh`, `archive/cgsvpn-eth0.sh` | Application and VPN workflows, not generic host maintenance. |
-| `archive/start-service-template-helper.sh` | Template only. |
+| `idcp-wallet.sh` | RODiT / NEAR wallet workflows (not generic host maintenance). |
 
 ### Installed automation on this host
 

@@ -20,7 +20,7 @@ export NEAR_NETWORK_CONFIG="mainnet-lava"
 ```
 
 ### Option 2: Host-local file in infra-app
-`./bootstrap-infra-app.sh` copies the example to `~/infra-app/roditwallet.env`.
+`./bootstrap-infra-app.sh` creates `~/infra-app/roditwallet.env` when missing.
 `idcp-wallet.sh` sources that file automatically. Edit it for this machine; do not commit it.
 
 ### Option 3: Permanent configuration

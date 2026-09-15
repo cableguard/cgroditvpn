@@ -96,7 +96,7 @@ cd ~/infra
 
 `bootstrap-infra-app.sh` also creates `trivy-scan-results/`, seeds
 `maintenance-status.md` from `docs/maintenance-status.example.md` (if missing), and
-copy-migrates any legacy `~/infra/trivy-scan-results/*` (except the committed example).
+may migrate any legacy `~/infra/trivy-scan-results/*` into `~/infra-app/`.
 After installing timers or hardening, update `~/infra-app/maintenance-status.md`.
 
 ### 4. Verify

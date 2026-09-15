@@ -81,8 +81,7 @@ Scripts that used to be separate entry points are merged with a **subcommand** a
 ### Core services
 - **`idcp-wallet.sh`** — RODiT wallet management (see usage below)
 - **`restart-containers-apis.sh`** — Restart all API containers in correct order
-- **`start`** — Compatibility wrapper for the reusable service starter
-- **`archive/cgcvpn.sh`**, **`archive/cgsvpn-eth0.sh`** — Legacy VPN helpers (call the `wg` CLI)
+- **`start`** — Compatibility wrapper; runs `INFRA_SERVICE_STARTER` from the host profile
 
 ### Container monitoring
 - **`manage-monitoring-pods.sh`** — `install` | `enable` | `disable` | `status` for Podman liveness monitoring
@@ -100,12 +99,10 @@ Scripts that used to be separate entry points are merged with a **subcommand** a
 - **`prepare-httpd-for-certbot-helper.sh`** — Shared httpd lifecycle (sourced, not run directly)
 - **`scan-containers-vulnerabilities-weekly.sh`** — Trivy: local/registry images, optional `trivy fs` on `*-idc` repos, SBOM diff (`--pull-missing`, `--fail-on-findings`); reports under `~/infra-app/trivy-scan-results/`
 - **`scan-containers-vulnerabilities-weekly.{service,timer}`** — Weekly Trivy timer (install via `manage-weekly-maintenance.sh install`)
-- **`trivy-scan-results/scan-image-manifest.example.txt`** — Template for extra image refs (copy to `~/infra-app/trivy-scan-results/scan-image-manifest.txt`)
 - **`harden-server-oneoff.sh`** — Bootstrap SSH, fail2ban, auditd hardening
 - **`apply-security-improvements-oneoff.sh`** — SSH keys cleanup + harden + firewall + optional API fail2ban jail
 - **`fix-audit-rules-oneoff.sh`** — Repair audit watch rules when secrets paths are missing
 - **`configure-fail2ban-idclaw-api-jail-oneoff.sh`** — `install [logpath]` | `remove` for API-scan fail2ban jail
-- **`archive/list-vault-secrets.sh`** — List Vault secrets (`VAULT_PROFILE` or a named profile)
 
 ### System maintenance
 - **`bootstrap-infra-app.sh`** — Create `~/infra-app/`, host profile, `maintenance-status.md` template
@@ -124,7 +121,6 @@ Scripts that used to be separate entry points are merged with a **subcommand** a
 - **`configure-host-firewall-oneoff.sh`** — inbound TCP allowlist from `~/infra-app/infra-env-helper.sh`
 - **`setup-host-oneoff.sh`** — One-shot bootstrap: rootless Podman, weekly timers, pod monitor, app dirs, TLS, firewall, optional 443 redirect
 - **`setup-dedalo{42,44,46,47}-host-oneoff.sh`** — Thin wrappers around `setup-host-oneoff.sh`
-- **`archive/start-service-template-helper.sh`** — Template for per-app Podman start scripts
 
 ## RODiT wallet usage
 

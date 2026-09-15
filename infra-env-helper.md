@@ -25,8 +25,8 @@ Override with `INFRA_APP_DIR` if the app dir is not `$(dirname "$INFRA_REPO")/in
 
 Defaults (set in `infra-env-helper-shared.sh`): `INFRA_OUTPUT_DIR=$INFRA_APP_DIR`,
 `INFRA_TRIVY_RESULTS_DIR=$INFRA_OUTPUT_DIR/trivy-scan-results`. On other hosts,
-`./bootstrap-infra-app.sh` creates the output dir and migrates any legacy
-`~/infra/trivy-scan-results/*` artifacts (except the committed example).
+`./bootstrap-infra-app.sh` creates the output dir (and may migrate any legacy
+`~/infra/trivy-scan-results/*` artifacts into `~/infra-app/`).
 
 **Source of truth for inventories:** host profiles below and
 [production-hosts.md](./docs/production-hosts.md). Live values belong in

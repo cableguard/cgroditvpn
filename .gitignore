@@ -33,6 +33,4 @@ infra-app/
 .lesshst
 
 # Legacy path: scan outputs now live under ~/infra-app/trivy-scan-results/
-# Keep only the committed example manifest in the git checkout.
-trivy-scan-results/**
-!trivy-scan-results/scan-image-manifest.example.txt
+trivy-scan-results/

@@ -20,4 +20,9 @@ if [[ -z "$SERVICE_NAME" || -z "$SERVICE_PORT" ]]; then
     exit 1
 fi
 
+if [[ -z "${INFRA_SERVICE_STARTER:-}" || ! -f "$INFRA_SERVICE_STARTER" ]]; then
+    echo "Error: set INFRA_SERVICE_STARTER in ~/infra-app/infra-env-helper.sh to a start script path" >&2
+    exit 1
+fi
+
 bash "$INFRA_SERVICE_STARTER" "$SERVICE_NAME" "$SERVICE_PORT"

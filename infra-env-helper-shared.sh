@@ -115,7 +115,7 @@ if declare -p INFRA_API_PORTS &>/dev/null; then
   fi
 fi
 
-INFRA_SERVICE_STARTER="${INFRA_SERVICE_STARTER:-${INFRA_REPO}/archive/start-service-template-helper.sh}"
+INFRA_SERVICE_STARTER="${INFRA_SERVICE_STARTER:-}"
 
 # Grafana/Loki stack (grafanaloki-app); used by start-monitoring-pod.sh and liveness monitor.
 INFRA_MONITORING_POD="${INFRA_MONITORING_POD:-monitoring-pod}"

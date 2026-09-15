@@ -214,20 +214,27 @@ PY
 }
 
 seed_host_local_files() {
-  local wallet_src="${INFRA_REPO}/archive/roditwallet.env.example"
   local wallet_dst="${INFRA_APP_DIR}/roditwallet.env"
-  if [[ -f "$wallet_src" && ! -f "$wallet_dst" ]]; then
-    cp "$wallet_src" "$wallet_dst"
+  if [[ ! -f "$wallet_dst" ]]; then
+    cat >"$wallet_dst" <<'EOF'
+# Optional NEAR RPC overrides for idcp-wallet.sh (host-local; do not commit).
+# Uncomment one:
+# export NEAR_NETWORK_CONFIG="mainnet-lava"
+# export NEAR_NETWORK_CONFIG="mainnet-fastnear"
+# export NEAR_NETWORK_CONFIG="testnet-lava"
+EOF
     chmod 640 "$wallet_dst"
     echo "Installed: $wallet_dst"
   fi
 
-  local example_manifest="${INFRA_REPO}/trivy-scan-results/scan-image-manifest.example.txt"
-  if [[ -f "$example_manifest" && ! -f "${INFRA_APP_DIR}/trivy-scan-results/scan-image-manifest.example.txt" ]]; then
-    cp "$example_manifest" "${INFRA_APP_DIR}/trivy-scan-results/"
-  fi
-  if [[ -f "$example_manifest" && ! -f "${INFRA_APP_DIR}/trivy-scan-results/scan-image-manifest.txt" ]]; then
-    cp "$example_manifest" "${INFRA_APP_DIR}/trivy-scan-results/scan-image-manifest.txt"
+  local manifest="${INFRA_APP_DIR}/trivy-scan-results/scan-image-manifest.txt"
+  if [[ ! -f "$manifest" ]]; then
+    cat >"$manifest" <<'EOF'
+# Optional extra images for scan-containers-vulnerabilities-weekly.sh
+# One image reference per line, comments allowed.
+EOF
+    chmod 640 "$manifest"
+    echo "Installed: $manifest"
   fi
 }
 
