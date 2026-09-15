@@ -36,6 +36,28 @@ infra_enable_podman_linger() {
   return 1
 }
 
+# Lengthen podman-restart oneshot timeouts. Starting many rootless pods at once
+# often exceeds the default and leaves stacks half-up (SIGKILL mid-start).
+infra_install_podman_restart_timeout_dropin() {
+  local user="${1:-${INFRA_USER:-}}"
+  local home dropin_dir dropin
+  [[ -n "$user" ]] || return 1
+  home="$(getent passwd "$user" | cut -d: -f6)"
+  [[ -n "$home" ]] || home="/home/$user"
+  dropin_dir="${home}/.config/systemd/user/podman-restart.service.d"
+  dropin="${dropin_dir}/infra-timeout.conf"
+
+  mkdir -p "$dropin_dir"
+  cat >"$dropin" <<'EOF'
+[Service]
+# Boot can start many rootless containers; default oneshot timeout is too short.
+TimeoutStartSec=15min
+TimeoutStopSec=5min
+EOF
+  chown -R "$user:$user" "${home}/.config/systemd" 2>/dev/null || true
+  echo "Installed $dropin (TimeoutStartSec=15min)"
+}
+
 infra_enable_podman_restart_service() {
   local user="${1:-${INFRA_USER:-}}"
   local uid
@@ -48,11 +70,14 @@ infra_enable_podman_restart_service() {
     return 1
   fi
 
+  infra_install_podman_restart_timeout_dropin "$user" || true
   infra_run_as_user "$user" systemctl --user daemon-reload 2>/dev/null || true
   if infra_run_as_user "$user" systemctl --user list-unit-files podman.socket &>/dev/null; then
     infra_run_as_user "$user" systemctl --user enable --now podman.socket 2>/dev/null || true
   fi
-  if infra_run_as_user "$user" systemctl --user enable --now podman-restart.service; then
+  # Clear a previous failed boot attempt so the unit is ready for the next reboot.
+  infra_run_as_user "$user" systemctl --user reset-failed podman-restart.service 2>/dev/null || true
+  if infra_run_as_user "$user" systemctl --user enable podman-restart.service; then
     echo "Enabled podman-restart.service for $user (applies unless-stopped on boot)"
     return 0
   fi

@@ -1,5 +1,9 @@
 #!/bin/bash
 # Podman container liveness monitor helper (invoked by monitor-pods-liveness.service).
+#
+# For each INFRA_MONITOR_SERVICES entry, ensures the probe container is running and
+# heals degraded pods / exited siblings (nginx, agents, infra) even when the probe
+# itself looks healthy.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -78,6 +82,211 @@ container_exists() {
     podman_cmd ps -a --format '{{.Names}}' 2>/dev/null | grep -qxF "$name"
 }
 
+container_status() {
+    local name="$1"
+    podman_cmd inspect -f '{{.State.Status}}' "$name" 2>/dev/null || echo "missing"
+}
+
+container_running() {
+    [[ "$(container_status "$1")" == "running" ]]
+}
+
+pod_name_for_container() {
+    local container_name="$1"
+    local pod_id pod_name
+
+    # Rootless Podman on Alma 10 exposes the pod id as .Pod (not .PodID).
+    pod_id="$(podman_cmd inspect -f '{{.Pod}}' "$container_name" 2>/dev/null || true)"
+    if [[ -z "$pod_id" || "$pod_id" == "<nil>" || "$pod_id" == "null" || "$pod_id" == "<no value>" ]]; then
+        return 1
+    fi
+    pod_name="$(podman_cmd pod inspect -f '{{.Name}}' "$pod_id" 2>/dev/null || true)"
+    if [[ -z "$pod_name" || "$pod_name" == "<no value>" ]]; then
+        return 1
+    fi
+    printf '%s' "$pod_name"
+}
+
+pod_status() {
+    local pod_name="$1"
+    podman_cmd pod inspect -f '{{.State}}' "$pod_name" 2>/dev/null || echo "missing"
+}
+
+# List containers in a pod (names only).
+pod_container_names() {
+    local pod_name="$1"
+    podman_cmd ps -a --pod --filter "pod=$pod_name" --format '{{.Names}}' 2>/dev/null
+}
+
+# infra → app/agents → nginx (nginx last avoids upstream DNS races).
+order_stack_containers() {
+    local -a names=("$@")
+    local -a infra=() mid=() nginx=()
+    local n
+
+    for n in "${names[@]}"; do
+        [[ -n "$n" ]] || continue
+        if [[ "$n" == *-infra ]]; then
+            infra+=("$n")
+        elif [[ "$n" == *nginx* ]]; then
+            nginx+=("$n")
+        else
+            mid+=("$n")
+        fi
+    done
+    printf '%s\n' "${infra[@]+"${infra[@]}"}" "${mid[@]+"${mid[@]}"}" "${nginx[@]+"${nginx[@]}"}"
+}
+
+# Expected siblings outside pod inspect (name conventions + monitor probe).
+expected_stack_names() {
+    local service_name="$1"
+    local container_name="$2"
+    local port="${3:-}"
+    local infra base
+
+    printf '%s\n' "$container_name"
+    printf '%s\n' "${service_name}-nginx"
+    # hermes-agent → hermes-nginx; openclaw-agents → openclaw-nginx
+    base="${service_name%-agents}"
+    base="${base%-agent}"
+    if [[ "$base" != "$service_name" ]]; then
+        printf '%s\n' "${base}-nginx"
+    fi
+    # Common OpenClaw agent names on this fleet (same pod as openclaw-nginx).
+    if [[ "$service_name" == openclaw-agents || "$container_name" == openclaw-nginx ]]; then
+        printf '%s\n' openclaw-agent-a openclaw-agent-c openclaw-agent-e
+    fi
+    if [[ -n "$port" ]]; then
+        infra="$(infra_find_infra_container "$port" 2>/dev/null || true)"
+        [[ -n "$infra" ]] && printf '%s\n' "$infra"
+    fi
+}
+
+# Unique existing container names for this service (pod members + conventions).
+collect_stack_containers() {
+    local service_name="$1"
+    local container_name="$2"
+    local port="${3:-}"
+    local pod_name="" name
+    local -a raw=() out=()
+
+    if pod_name="$(pod_name_for_container "$container_name")"; then
+        mapfile -t raw < <(pod_container_names "$pod_name")
+    fi
+    mapfile -t -O "${#raw[@]}" raw < <(expected_stack_names "$service_name" "$container_name" "$port")
+
+    for name in "${raw[@]}"; do
+        [[ -n "$name" ]] || continue
+        container_exists "$name" || continue
+        local seen=0 c
+        for c in "${out[@]+"${out[@]}"}"; do
+            [[ "$c" == "$name" ]] && seen=1 && break
+        done
+        [[ "$seen" -eq 0 ]] && out+=("$name")
+    done
+
+    if [[ ${#out[@]} -eq 0 ]]; then
+        return 0
+    fi
+    order_stack_containers "${out[@]}"
+}
+
+stack_has_down_sibling() {
+    local name
+    for name in "$@"; do
+        container_running "$name" || return 0
+    done
+    return 1
+}
+
+start_container_with_retries() {
+    local container_name="$1"
+    local max_retries=5
+    local retry sleep_s=2
+    local is_nginx=0
+
+    [[ "$container_name" == *nginx* ]] && is_nginx=1
+
+    for ((retry = 1; retry <= max_retries; retry++)); do
+        if container_running "$container_name"; then
+            return 0
+        fi
+        podman_cmd start "$container_name" >>"$LOG_FILE" 2>&1 || true
+        sleep "$sleep_s"
+        if container_running "$container_name"; then
+            return 0
+        fi
+        # Nginx often fails once on "host not found in upstream" before DNS/aliases settle.
+        if [[ "$is_nginx" -eq 1 ]]; then
+            sleep_s=3
+            log_message "Retry $retry/$max_retries starting $container_name (upstream may not be ready)"
+        else
+            sleep_s=2
+        fi
+    done
+    return 1
+}
+
+heal_stack() {
+    local service_name="$1"
+    local container_name="$2"
+    local port="${3:-}"
+    local pod_name=""
+    local -a stack=()
+    local c
+
+    if pod_name="$(pod_name_for_container "$container_name")"; then
+        log_message "Starting pod $pod_name for $service_name"
+        podman_cmd pod start "$pod_name" >>"$LOG_FILE" 2>&1 || true
+        sleep 2
+    fi
+
+    mapfile -t stack < <(collect_stack_containers "$service_name" "$container_name" "$port")
+    if [[ ${#stack[@]} -eq 0 ]]; then
+        stack=("$container_name")
+        [[ -n "$port" ]] && {
+            local infra
+            infra="$(infra_find_infra_container "$port" 2>/dev/null || true)"
+            [[ -n "$infra" ]] && stack=("$infra" "$container_name" "${service_name}-nginx")
+        }
+    fi
+
+    for c in "${stack[@]}"; do
+        if container_running "$c"; then
+            continue
+        fi
+        log_message "Starting sibling $c for $service_name"
+        if ! start_container_with_retries "$c"; then
+            log_message "ERROR: failed to start $c for $service_name"
+        fi
+    done
+}
+
+stack_healthy() {
+    local service_name="$1"
+    local container_name="$2"
+    local port="${3:-}"
+    local pod_name=""
+    local -a stack=()
+
+    container_running "$container_name" || return 1
+
+    if pod_name="$(pod_name_for_container "$container_name")"; then
+        local pst
+        pst="$(pod_status "$pod_name")"
+        # Podman reports Degraded when any member is not running.
+        if [[ "$pst" == "Degraded" || "$pst" == "Stopped" || "$pst" == "Exited" ]]; then
+            return 1
+        fi
+    fi
+
+    mapfile -t stack < <(collect_stack_containers "$service_name" "$container_name" "$port")
+    if [[ ${#stack[@]} -gt 0 ]] && stack_has_down_sibling "${stack[@]}"; then
+        return 1
+    fi
+    return 0
+}
+
 restart_monitoring_pod() {
     local pod="${INFRA_MONITORING_POD:-monitoring-pod}"
     if ! podman_cmd pod exists "$pod" 2>/dev/null; then
@@ -85,37 +294,6 @@ restart_monitoring_pod() {
     fi
     log_message "Starting pod $pod for monitoring"
     podman_cmd pod start "$pod" >>"$LOG_FILE" 2>&1
-}
-
-restart_via_podman() {
-    local service_name="$1"
-    local container_name="$2"
-    local port="$3"
-    local infra pod_id pod_name
-    local -a stack=()
-
-    infra="$(infra_find_infra_container "$port")"
-    [[ -n "$infra" ]] && stack+=("$infra")
-    stack+=("$container_name" "${service_name}-nginx")
-
-    # Prefer starting the pod (API stacks are pod-based on this host).
-    pod_id="$(podman_cmd inspect -f '{{.PodID}}' "$container_name" 2>/dev/null || true)"
-    if [[ -n "$pod_id" && "$pod_id" != "<nil>" && "$pod_id" != "null" ]]; then
-        pod_name="$(podman_cmd pod inspect -f '{{.Name}}' "$pod_id" 2>/dev/null || true)"
-        if [[ -n "$pod_name" && "$pod_name" != "<no value>" ]]; then
-            log_message "Starting pod $pod_name for $service_name"
-            if podman_cmd pod start "$pod_name" >>"$LOG_FILE" 2>&1; then
-                return 0
-            fi
-        fi
-        log_message "Pod start failed for $service_name; falling back to container start"
-    fi
-
-    for c in "${stack[@]}"; do
-        if container_exists "$c"; then
-            podman_cmd start "$c" >>"$LOG_FILE" 2>&1 || true
-        fi
-    done
 }
 
 check_and_restart() {
@@ -137,43 +315,56 @@ check_and_restart() {
         return 1
     fi
 
-    local status
-    status=$(podman_cmd inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null || echo "missing")
-    if [[ "$status" == "running" ]]; then
+    if stack_healthy "$service_name" "$container_name" "$port"; then
         return 0
     fi
 
-    log_message "ALERT: $service_name ($container_name) is $status - initiating restart"
+    local status pst="n/a" pod_name=""
+    status="$(container_status "$container_name")"
+    if pod_name="$(pod_name_for_container "$container_name")"; then
+        pst="$(pod_status "$pod_name")"
+    fi
+    log_message "ALERT: $service_name unhealthy (probe=$container_name status=$status pod=${pod_name:-none} pod_state=$pst) - initiating heal"
 
     if [[ -n "$start_script" && -f "$start_script" ]]; then
         if SERVICE_NAME="$service_name" SERVICE_PORT="$port" bash "$start_script" "$service_name" "$port" >>"$LOG_FILE" 2>&1; then
-            log_message "SUCCESS: $service_name restarted via $start_script"
-            return 0
+            if stack_healthy "$service_name" "$container_name" "$port"; then
+                log_message "SUCCESS: $service_name healed via $start_script"
+                return 0
+            fi
+            log_message "WARNING: start script returned OK but stack still unhealthy; continuing heal"
+        else
+            log_message "ERROR: start script failed for $service_name ($start_script); falling back to podman heal"
         fi
-        log_message "ERROR: start script failed for $service_name ($start_script); falling back to podman restart"
     elif [[ -n "$start_script" ]]; then
-        log_message "ERROR: configured start script not found for $service_name ($start_script); falling back to podman restart"
+        log_message "ERROR: configured start script not found for $service_name ($start_script); falling back to podman heal"
     fi
 
     if [[ -z "$port" ]]; then
-        if [[ "$service_name" == "monitoring" ]] && restart_monitoring_pod; then
-            status=$(podman_cmd inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null || echo "missing")
-            if [[ "$status" == "running" ]]; then
-                log_message "SUCCESS: $service_name restarted via podman pod start"
+        if [[ "$service_name" == "monitoring" ]]; then
+            restart_monitoring_pod || true
+            heal_stack "$service_name" "$container_name" ""
+            if stack_healthy "$service_name" "$container_name" ""; then
+                log_message "SUCCESS: $service_name healed via monitoring pod start"
                 return 0
             fi
         fi
-        log_message "ERROR: no start script and no infra port for $service_name"
+        # Still try sibling heal without an infra port (pod-based stacks).
+        heal_stack "$service_name" "$container_name" ""
+        if stack_healthy "$service_name" "$container_name" ""; then
+            log_message "SUCCESS: $service_name healed via podman"
+            return 0
+        fi
+        log_message "ERROR: heal did not bring $service_name fully up"
         return 1
     fi
 
-    restart_via_podman "$service_name" "$container_name" "$port"
-    status=$(podman_cmd inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null || echo "missing")
-    if [[ "$status" == "running" ]]; then
-        log_message "SUCCESS: $service_name restarted via podman (port $port)"
+    heal_stack "$service_name" "$container_name" "$port"
+    if stack_healthy "$service_name" "$container_name" "$port"; then
+        log_message "SUCCESS: $service_name healed via podman (port $port)"
         return 0
     fi
-    log_message "ERROR: podman restart did not bring $container_name up"
+    log_message "ERROR: heal did not bring $service_name fully up"
     return 1
 }
 
